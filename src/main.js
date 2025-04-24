@@ -4,6 +4,7 @@ import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { World } from './scripts/world';
 import { createUI } from './scripts/ui';
 import { Player } from './scripts/player';
+import { Physics } from './scripts/physics';
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -35,47 +36,48 @@ scene.add(world);
 
 const player = new Player(scene);
 
+const physics = new Physics(scene);
+
 function setupLights() { 
-  const sun = new THREE.DirectionalLight();
-  sun.castShadow = true;
-  sun.shadow.camera.left = -100;
-  sun.shadow.camera.right = 100;
-  sun.shadow.camera.bottom = -100;
-  sun.shadow.camera.top = 100;
-  sun.shadow.camera.far = 0.1;
-  sun.shadow.camera.far = 100;
-  sun.position.set(50, 50, 50);
-  sun.shadow.mapSize = new THREE.Vector2(512, 512);
-  scene.add(sun);
+    const sun = new THREE.DirectionalLight();
+    sun.castShadow = true;
+    sun.shadow.camera.left = -100;
+    sun.shadow.camera.right = 100;
+    sun.shadow.camera.bottom = -100;
+    sun.shadow.camera.top = 100;
+    sun.shadow.camera.far = 0.1;
+    sun.shadow.camera.far = 100;
+    sun.position.set(50, 50, 50);
+    sun.shadow.mapSize = new THREE.Vector2(512, 512);
+    scene.add(sun);
 
   // const shadowHelper = new THREE.CameraHelper(sun.shadow.camera);
   // scene.add(shadowHelper)
 
-  const ambient = new THREE.AmbientLight();
-  ambient.intensity = 0.1;
-  scene.add(ambient);
+    const ambient = new THREE.AmbientLight();
+    ambient.intensity = 0.1;
+    scene.add(ambient);
 }
 
 let previousTime = performance.now();
 
 function animate() {
-  let currentTime = performance.now();
-  let dt = (currentTime - previousTime) / 1000;
+    let currentTime = performance.now();
+    let dt = (currentTime - previousTime) / 1000;
 
-  requestAnimationFrame(animate);
-  player.applyInputs(dt);
-  renderer.render(scene, player.controls.isLocked ? player.camera : orbitCamera);
-  stats.update();
-
-  previousTime = currentTime;
+    requestAnimationFrame(animate);
+    physics.update(dt, player, world);
+    renderer.render(scene, player.controls.isLocked ? player.camera : orbitCamera);
+    stats.update();
+    previousTime = currentTime;
 }
 
 window.addEventListener('resize', () => {
-  orbitCamera.aspect = window.innerWidth/window.innerHeight;
-  orbitCamera.updateProjectionMatrix();
-  player.camera.aspect = window.innerWidth/window.innerHeight;
-  player.camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    orbitCamera.aspect = window.innerWidth/window.innerHeight;
+    orbitCamera.updateProjectionMatrix();
+    player.camera.aspect = window.innerWidth/window.innerHeight;
+    player.camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 })
 
 createUI(world, player);
