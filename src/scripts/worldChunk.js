@@ -114,7 +114,7 @@ export class WorldChunk extends THREE.Group {
         .filter(blockType => blockType.id !== blocks.empty.id)
         .forEach(blockType => {
             const mesh = new THREE.InstancedMesh(geometry, blockType.material, maxCount);
-            mesh.name = blockType.name;
+            mesh.name = blockType.id;
             mesh.count = 0;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
@@ -225,5 +225,86 @@ export class WorldChunk extends THREE.Group {
             if(obj.dispose) obj.dispose();
         });
         this.clear();
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    removeBlock(x, y, z) {
+        const block = this.getBlock(x, y, z);
+        if (block && block.id !== blocks.empty.id) {
+            this.deleteBlockInstance(x, y, z);
+            this.setBlockId(x, y, z, blocks.empty.id);
+        //   this.dataStore.set(this.position.x, this.position.z, x, y, z, blocks.empty.id);
+        }
+    }
+
+    /**
+     * To remove a block we can't just change the instanceMatrix set as it was preallocated to the maximum amount during generation
+     * To use a method called swapping to swap the last count of the mesh with the selected mesh 
+     * Then reduce the mesh count by 1 
+     * Mesh will only render up to the mesh count which mean the swapped mesh at the last position will not be rendered.
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    deleteBlockInstance(x, y, z) {
+        try {
+            const block = this.getBlock(x, y, z);
+            if (block.id === blocks.empty.id || block.instanceId === null) return;
+            const mesh = this.children.find((instanceMesh) => instanceMesh.name === block.id);
+            const instanceId = block.instanceId;
+            if(!mesh) {
+                throw new Error('Mesh not found.');
+            }
+
+            const lastMatrix = new THREE.Matrix4();
+            mesh.getMatrixAt(mesh.count - 1, lastMatrix);
+
+            const v = new THREE.Vector3();
+            v.applyMatrix4(lastMatrix);
+            this.setBlockInstanceId(v.x, v.y, v.z, instanceId);
+            
+            mesh.setMatrixAt(instanceId, lastMatrix);
+            mesh.count--; 
+
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.computeBoundingSphere();
+            
+            this.setBlockInstanceId(x, y, z, null);
+        } catch (err) {
+            console.error(err.message);
+            return
+        }
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    addBlockInstance(x, y, z) {
+        const block = this.getBlock(x, y, z);
+        if (block && block.id !== blocks.empty.id && block.instanceId === null) {
+            const mesh = this.children.find((instanceMesh) => instanceMesh.name === block.id);
+            const instanceId = mesh.count++;
+            this.setBlockInstanceId(x, y, z, instanceId);
+            const matrix = new THREE.Matrix4();
+            matrix.setPosition(x, y, z);
+            mesh.setMatrixAt(instanceId, matrix);
+            mesh.instanceMatrix.needsUpdate = true;
+            mesh.computeBoundingSphere();
+        }
+    }
+
+    addBlock (x, y, z, blockId) {
+        if (this.getBlock(x, y, z).id === blocks.empty.id) {
+            this.setBlockId(x, y, z, blockId);
+            this.addBlockInstance(x, y, z);
+        }
     }
 }

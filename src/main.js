@@ -5,6 +5,7 @@ import { World } from './scripts/world';
 import { createUI } from './scripts/ui';
 import { Player } from './scripts/player';
 import { Physics } from './scripts/physics';
+import { blocks } from './scripts/blocks';
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -63,7 +64,6 @@ function setupLights() {
 }
 
 let previousTime = performance.now();
-
 function animate() {
     let currentTime = performance.now();
     let dt = (currentTime - previousTime) / 1000;
@@ -71,6 +71,7 @@ function animate() {
     requestAnimationFrame(animate);
    
     if(player.controls.isLocked) {
+        player.update(world);
         physics.update(dt, player, world);
         world.update(player);
         sun.position.copy(player.position);
@@ -81,6 +82,35 @@ function animate() {
     stats.update();
     previousTime = currentTime;
 }
+
+/**
+ * 
+ * @param {MouseEvent} e
+ */
+function onMouseDown(e) {
+    console.log('down')
+    // player must go into first person mode and selectedCoords must be defined 
+    // Selected coords defined meaning to say there is a selected block
+    if(player.controls.isLocked && player.selectedCoords) {
+        console.log(player.activeBlockId)
+        if(player.activeBlockId === blocks.empty.id) {
+            world.removeBlock(
+                player.selectedCoords.x,
+                player.selectedCoords.y,
+                player.selectedCoords.z
+            );
+        } else {
+            world.addBlock(
+                player.selectedCoords.x,
+                player.selectedCoords.y,
+                player.selectedCoords.z,
+                player.activeBlockId
+            );
+        }
+    }
+}
+
+window.addEventListener('mousedown', onMouseDown)
 
 window.addEventListener('resize', () => {
     orbitCamera.aspect = window.innerWidth/window.innerHeight;

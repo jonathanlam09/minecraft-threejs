@@ -165,4 +165,73 @@ export class World extends THREE.Group {
         }
         this.add(chunk);
     }
+
+    /**
+     * Remove the block at given coords
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    removeBlock(x, y, z) {
+        const coords = this.worldToChunkCoords(x, y, z);
+        const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+        // Don't allow removing the first layer of blocks
+        if (coords.block.y === 0) return;
+
+        if (chunk) {
+            chunk.removeBlock(
+                coords.block.x,
+                coords.block.y,
+                coords.block.z
+            );
+    
+            this.revealBlock(x - 1, y, z);
+            this.revealBlock(x + 1, y, z);
+            this.revealBlock(x, y - 1, z);
+            this.revealBlock(x, y + 1, z);
+            this.revealBlock(x, y, z - 1);
+            this.revealBlock(x, y, z + 1);
+        }
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    revealBlock(x, y, z) {
+        const coords = this.worldToChunkCoords(x, y, z);
+        const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+        if (chunk) {
+            chunk.addBlockInstance(
+                coords.block.x,
+                coords.block.y,
+                coords.block.z
+            )
+        }
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     * @param {number} activeBlockId 
+     */
+    addBlock(x, y, z, activeBlockId) {
+        const coords = this.worldToChunkCoords(x, y, z);
+        const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+        if (chunk) {
+            chunk.addBlock(
+                coords.block.x,
+                coords.block.y,
+                coords.block.z,
+                activeBlockId
+            );
+        }
+    }
 }

@@ -24,9 +24,8 @@ export class Physics {
     accumulator = 0;
 
     constructor (scene) {
-     
         this.helpers = new THREE.Group();
-        // this.helpers.visible = false;
+        this.helpers.visible = false;
         scene.add(this.helpers);
     }
 
@@ -39,7 +38,7 @@ export class Physics {
     update(dt, player, world) {
         this.accumulator += dt;
         while (this.accumulator >= this.stepSize) {
-            this.helpers.clear();
+            // this.helpers.clear();
             player.velocity.y -= this.gravity * this.stepSize;
             player.applyInputs(this.stepSize);
             this.detectCollisions(player, world);
@@ -131,6 +130,8 @@ export class Physics {
      */
     detectCollisions(player, world) {
         player.onGround = false;
+        this.helpers.clear();
+        
         const candidates = this.broadPhase(player, world);
         const collisions = this.narrowPhase(candidates, player);
 
