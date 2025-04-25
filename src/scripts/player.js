@@ -5,11 +5,12 @@ export class Player {
     radius = 0.5;
     height = 1.75;
 
-    maxSpeed = 10;
+    maxSpeed = 7;
     input = new THREE.Vector3();
     velocity = new THREE.Vector3();
     #worldVelocity = new THREE.Vector3();
-
+    jumpspeed = 10;
+    onGround = false;
     camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 200);
     cameraHelper = new THREE.CameraHelper(this.camera);
     controls =  new PointerLockControls(this.camera, document.body);
@@ -86,6 +87,11 @@ export class Player {
             case 'KeyR': 
                 this.position.set(32, 16, 32);
                 this.velocity.set(0, 0, 0);
+                break;
+            case 'Space':
+                if(this.onGround) {
+                    this.velocity.y += this.jumpspeed;
+                }
                 break;
         }
     }

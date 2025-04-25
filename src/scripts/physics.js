@@ -37,18 +37,14 @@ export class Physics {
      * @param {World} world 
      */
     update(dt, player, world) {
-        this.helpers.clear();
-        player.velocity.y -= this.gravity * dt;
-        player.applyInputs(dt);
-        player.updateBoundsHelper();
-        this.detectCollisions(player, world);
-        // this.accumulator += dt;
-        // while (this.accumulator >= this.stepSize) {
-        //     player.velocity.y -= this.gravity * this.stepSize;
-        //     player.applyInputs(this.stepSize);
-        //     this.detectCollisions(player, world);
-        //     this.accumulator -= this.stepSize;
-        // }
+        this.accumulator += dt;
+        while (this.accumulator >= this.stepSize) {
+            this.helpers.clear();
+            player.velocity.y -= this.gravity * this.stepSize;
+            player.applyInputs(this.stepSize);
+            this.detectCollisions(player, world);
+            this.accumulator -= this.stepSize;
+        }
     }
 
     broadPhase (player, world) {
@@ -107,6 +103,7 @@ export class Physics {
 
                 let normal, overlap;
                 if(overlapY < overlapXZ) {
+                    player.onGround = true;
                     normal = new THREE.Vector3(0, -Math.sign(dy), 0);
                     overlap = overlapY;
                 } else {
@@ -133,6 +130,7 @@ export class Physics {
      * @param {World} world 
      */
     detectCollisions(player, world) {
+        player.onGround = false;
         const candidates = this.broadPhase(player, world);
         const collisions = this.narrowPhase(candidates, player);
 
@@ -151,13 +149,13 @@ export class Physics {
             // We need to re-check if the contact point is inside the player bounding
             // cylinder for each collision since the player position is updated after
             // each collision is resolved
-            // if (!this.pointInPlayerBoundingCylinder(collision.contactPoint, player)) continue;
+            if (!this.pointInPlayerBoundingCylinder(collision.contactPoint, player)) continue;
 
             // Adjust position of player so the block and player are no longer overlapping
             let deltaPosition = collision.normal.clone();
             deltaPosition.multiplyScalar(collision.overlap);
             player.position.add(deltaPosition);
-            console.log(collision.normal)
+            
             // Get the magnitude of the player's velocity along the collision normal
             let magnitude = player.worldVelocity.dot(collision.normal);
             // // Remove that part of the velocity from the player's velocity

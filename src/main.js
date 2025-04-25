@@ -30,6 +30,7 @@ controls.update();
 
 // Scene
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x80a0e0, 50, 100);
 
 const world = new World();
 scene.add(world);
@@ -38,18 +39,20 @@ const player = new Player(scene);
 
 const physics = new Physics(scene);
 
+const sun = new THREE.DirectionalLight();
 function setupLights() { 
-    const sun = new THREE.DirectionalLight();
     sun.castShadow = true;
     sun.shadow.camera.left = -100;
     sun.shadow.camera.right = 100;
     sun.shadow.camera.bottom = -100;
     sun.shadow.camera.top = 100;
     sun.shadow.camera.far = 0.1;
-    sun.shadow.camera.far = 100;
+    sun.shadow.camera.far = 200;
+    sun.shadow.bias = -0.001;
     sun.position.set(50, 50, 50);
-    sun.shadow.mapSize = new THREE.Vector2(512, 512);
+    sun.shadow.mapSize = new THREE.Vector2(2048, 2048);
     scene.add(sun);
+    scene.add(sun.target);
 
   // const shadowHelper = new THREE.CameraHelper(sun.shadow.camera);
   // scene.add(shadowHelper)
@@ -66,7 +69,14 @@ function animate() {
     let dt = (currentTime - previousTime) / 1000;
 
     requestAnimationFrame(animate);
-    physics.update(dt, player, world);
+   
+    if(player.controls.isLocked) {
+        physics.update(dt, player, world);
+        world.update(player);
+        sun.position.copy(player.position);
+        sun.position.sub(new THREE.Vector3(-50, -50, -50));
+        sun.target.position.copy(player.position);
+    }
     renderer.render(scene, player.controls.isLocked ? player.camera : orbitCamera);
     stats.update();
     previousTime = currentTime;
@@ -80,7 +90,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 })
 
-createUI(world, player);
+// createUI(world, player);
 world.generate();
 setupLights();
 animate();

@@ -7,8 +7,8 @@ export function createUI(world, player) {
     const playerFolder = gui.addFolder('Player');
     playerFolder.add(player, 'maxSpeed', 1, 20).name('Max Speed');
 
-    gui.add(world.size, 'width', 8, 128, 1).name('Width');
-    gui.add(world.size, 'height', 8, 64, 1).name('Height');
+    gui.add(world.chunkSize, 'width', 8, 128, 1).name('Width');
+    gui.add(world.chunkSize, 'height', 8, 64, 1).name('Height');
 
     const terrainFolder = gui.addFolder('Terrain');
     terrainFolder.add(world.params, 'seed', 0, 10000).name('Seed');
