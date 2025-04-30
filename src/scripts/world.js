@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WorldChunk } from './worldChunk';
+import { DataStore } from './dataStore';
 
 export class World extends THREE.Group {
     asyncLoading = true;
@@ -11,22 +12,82 @@ export class World extends THREE.Group {
     params = {
         seed: 0,
         terrain: {
+            scale: 80,
+            magnitude: 10,
+            offset: 4,
+            waterOffset: 5
+        },
+        biomes: {
+            scale: 200,
+            variation: {    
+                amplitude: 0.2,
+                scale: 50
+            },
+            tundraToTemperature: 0.25,
+            temperateToJungle: 0.5,
+            jungleToDesert: 0.75
+        },
+        trees: {
+            trunk: {
+                minHeight: 4,
+                maxHeight: 7
+            },
+            canopy: {
+                minRadius: 3,
+                maxRadius: 3,
+                density: 0.7 
+            },
+            frequency: 0.005
+        },
+        clouds: {
             scale: 30,
-            magnitude: .5,
-            offset: .2
+            density: 0.3
         }
     };
+    dataStore = new DataStore();
 
     constructor(seed = 0) {
         super();
         this.seed = seed;
+
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 's':
+                    this.save();
+                    break;
+                case 'r':
+                    this.load();
+                    break;
+            }
+        })
     }
 
-    generate() {
+    save() {
+        localStorage.setItem('minecraft_params', JSON.stringify(this.params));
+        localStorage.setItem('minecraft_data', JSON.stringify(this.dataStore.data));
+        document.getElementById('status').innerHTML = 'Game saved.';
+        setTimeout(() => {
+            document.getElementById('status').innerHTML = '';
+        }, 3000)
+    }
+
+    load() {
+        this.params = JSON.parse(localStorage.getItem('minecraft_params'));
+        this.dataStore.data = JSON.parse(localStorage.getItem('minecraft_data'));
+        document.getElementById('status').innerHTML = 'Game loaded.';
+        setTimeout(() => {
+            document.getElementById('status').innerHTML = '';
+        }, 3000);
+    }
+
+    generate(clearCache = false) {
+        if(clearCache) {
+            this.dataStore.clear();
+        } 
         this.disposeChunks();
         for (let x=-this.drawDistance;x<=this.drawDistance;x++) {
             for(let z=-this.drawDistance;z<=this.drawDistance;z++) {
-                const chunk = new WorldChunk(this.chunkSize, this.params);
+                const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
                 chunk.position.set(x * this.chunkSize.width, 0, z * this.chunkSize.width);
                 chunk.userData= {x, z};
                 chunk.generate();
@@ -155,7 +216,7 @@ export class World extends THREE.Group {
     }
 
     generateChunk (x, z) {
-        const chunk = new WorldChunk(this.chunkSize, this.params);
+        const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
         chunk.position.set(x * this.chunkSize.width, 0, z * this.chunkSize.width);
         chunk.userData= {x, z};
         if(this.asyncLoading) {
@@ -231,6 +292,25 @@ export class World extends THREE.Group {
                 coords.block.y,
                 coords.block.z,
                 activeBlockId
+            );
+        }
+    }
+
+    /**
+     * Hides the block 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     */
+    hideBlock (x, y, z) {
+        const coords = this.worldToChunkCoords(x, y, z);
+        const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+        if (chunk && chunk.isBlockObscured(coords.block.x, coords.block.y, coords.block.z)) {
+            chunk.deleteBlockInstance(
+                coords.block.x,
+                coords.block.y,
+                coords.block.z,
             );
         }
     }

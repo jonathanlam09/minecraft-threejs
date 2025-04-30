@@ -6,6 +6,7 @@ import { createUI } from './scripts/ui';
 import { Player } from './scripts/player';
 import { Physics } from './scripts/physics';
 import { blocks } from './scripts/blocks';
+import { ModelLoader } from './scripts/modelLoader';
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -23,6 +24,7 @@ document.body.appendChild(renderer.domElement);
 const orbitCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight);
 orbitCamera.position.set(-32, 16, -32);
 orbitCamera.lookAt(0, 0, 0);
+orbitCamera.layers.enable(1);
 
 // Controls
 const controls = new OrbitControls(orbitCamera, renderer.domElement);
@@ -38,10 +40,16 @@ scene.add(world);
 
 const player = new Player(scene);
 
+const modelLoader = new ModelLoader();
+modelLoader.loadModels((model) => {
+    player.tool.setMesh(model.pickaxe);
+})
+
 const physics = new Physics(scene);
 
 const sun = new THREE.DirectionalLight();
 function setupLights() { 
+    sun.intensity = 3;
     sun.castShadow = true;
     sun.shadow.camera.left = -100;
     sun.shadow.camera.right = 100;
@@ -49,7 +57,8 @@ function setupLights() {
     sun.shadow.camera.top = 100;
     sun.shadow.camera.far = 0.1;
     sun.shadow.camera.far = 200;
-    sun.shadow.bias = -0.001;
+    sun.shadow.bias = -0.0001;
+    // sun.shadow.normalBias = -0.0001;
     sun.position.set(50, 50, 50);
     sun.shadow.mapSize = new THREE.Vector2(2048, 2048);
     scene.add(sun);
@@ -99,6 +108,7 @@ function onMouseDown(e) {
                 player.selectedCoords.y,
                 player.selectedCoords.z
             );
+            player.tool.startAnimation();
         } else {
             world.addBlock(
                 player.selectedCoords.x,

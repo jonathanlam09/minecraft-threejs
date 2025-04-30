@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { blocks } from './blocks';
+import { Tool } from './tool';
 
 const CENTER_SCREEN = new THREE.Vector2();
 export class Player {
@@ -19,10 +20,14 @@ export class Player {
 
     raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(), 0, 3);
     selectedCoords = null;
-    activeBlockId = blocks.grass.id;
+    activeBlockId = blocks.empty.id;
+
+    tool = new Tool();
     
     constructor(scene) {
         this.camera.position.set(32, 16, 32);
+        this.camera.layers.enable(1);
+        this.camera.add(this.tool);
         scene.add(this.camera);
         scene.add(this.cameraHelper);
 
@@ -43,6 +48,8 @@ export class Player {
         const selectionGeomtry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
         this.selectionHelper = new THREE.Mesh(selectionGeomtry, selectionMaterial);
         scene.add(this.selectionHelper);
+
+        this.raycaster.layers.set(0);
     }
 
     get worldVelocity() {
@@ -57,6 +64,7 @@ export class Player {
      */
     update(world) {
         this.updateRaycaster(world);
+        this.tool.update();
     }
 
     /**
@@ -93,7 +101,7 @@ export class Player {
     applyWorldDeltaVelocity(dv) {
         dv.applyEuler(new THREE.Euler(0, -this.camera.rotation.y, 0));
         this.velocity.add(dv);
-    }
+    } 
 
     applyInputs(dt) {
         if (this.controls.isLocked) {
@@ -122,6 +130,7 @@ export class Player {
      * @param {KeyboardEvent} event
      */
     onKeyDown(e) {
+        document.getElementById('overlay').style.display = 'none';
         if(!this.controls.isLocked) {
             this.controls.lock();
         }
@@ -133,8 +142,14 @@ export class Player {
             case 'Digit3': 
             case 'Digit4': 
             case 'Digit5': 
+            case 'Digit6': 
+            case 'Digit7': 
+            case 'Digit8': 
+                document.getElementById(`toolbar-${this.activeBlockId}`).classList.remove('selected')
                 this.activeBlockId = Number(e.key);
-                console.log('Active block: ', e.key)
+                document.getElementById(`toolbar-${this.activeBlockId}`).classList.add('selected')
+
+                this.tool.visible = (this.activeBlockId === 0);
                 break;
              case 'KeyW':
                 this.input.z = this.maxSpeed;
